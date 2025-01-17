@@ -1,0 +1,10 @@
+boto3==1.36.1
+fastapi==0.115.6
+jose==1.0.0
+Markdown==3.7
+openai==1.59.7
+pandas==2.2.3
+pydantic==2.10.5
+python_jose==3.3.0
+schedule==1.2.2
+watchdog==6.0.0
