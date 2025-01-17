@@ -1,8 +1,8 @@
-# Financial Chatbot Project
+# Assistant Chatbot Project
 
 ## Overview
 
-This project implements a financial chatbot using Python, FastAPI, and OpenAI's GPT-4. The chatbot processes user questions, analyzes a CSV file containing financial data, and provides personalized investment insights. It also integrates with Amazon DynamoDB to store user interactions, maintaining conversational context for each user session.
+This project implements a Assistant chatbot using Python, FastAPI, and OpenAI's GPT-4. The chatbot processes user questions, analyzes a CSV file containing financial data, and provides personalized investment insights. It also integrates with Amazon DynamoDB to store user interactions, maintaining conversational context for each user session.
 
 ---
 
