@@ -1,6 +1,6 @@
 import schedule
 import time
-from app.dynamodb_client import table
+from .dynamodb_client import table
 
 def delete_old_data():
     cutoff = int(time.time()) - (12 * 30 * 24 * 60 * 60)

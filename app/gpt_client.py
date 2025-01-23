@@ -1,8 +1,8 @@
 from openai import OpenAI
 import os
-from app.utils import get_instruction_prompt
-from app.csv_processor import csv_data
-from app.dynamodb_client import save_interaction, get_user_history
+from .utils import get_instruction_prompt
+from .csv_processor import csv_data
+from .dynamodb_client import save_interaction, get_user_history
 
 gpt_model = os.getenv("GPT_MODEL")
 OpenAI.api_key = os.getenv("OPENAI_API_KEY")
