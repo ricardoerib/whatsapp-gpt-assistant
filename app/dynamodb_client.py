@@ -8,12 +8,13 @@ dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table("FinancialBotData")
 
 def save_interaction(session_id, question, answer, full_response):
+    full = full_response.__str__()
     try:
         table.put_item(Item={
             "session_id": session_id if session_id else "anonymous",
             "question": question,
             "answer": answer,
-            "full_response": full_response,
+            "full_response": full,
             "timestamp": int(time.time())
         })
     except Exception as e:
@@ -23,7 +24,7 @@ def save_interaction(session_id, question, answer, full_response):
 def get_user_history(session_id):
     try:
         response = table.query(
-            KeyConditionExpression=boto3.dynamodb.conditions.Key('sessionId').eq(session_id),
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('session_id').eq(session_id),
             ScanIndexForward=True 
         )
         items  = response.get('Items', [])

@@ -3,6 +3,8 @@ import os
 from .utils import get_instruction_prompt
 from .csv_processor import csv_data
 from .dynamodb_client import save_interaction, get_user_history
+from dotenv import load_dotenv
+load_dotenv()
 
 gpt_model = os.getenv("GPT_MODEL")
 OpenAI.api_key = os.getenv("OPENAI_API_KEY")
@@ -19,9 +21,9 @@ def get_response_from_gpt(session_id, question):
     else:
         context = ""
     
-    if isDatabaseEnabled:
-        history = get_user_history(session_id)
-        context += "\n".join(history) + "\n" if history else ""
+    # if isDatabaseEnabled:
+    #     history = get_user_history(session_id)
+    #     context += "\n".join(history) + "\n" if history else ""
     
     prompt = context + f"Pergunta do usuário: {question}"
 
@@ -35,8 +37,8 @@ def get_response_from_gpt(session_id, question):
             temperature=0.5,
         )
         answer = response.choices[0].message.content
-        if isDatabaseEnabled:
-            save_interaction(session_id, question, answer, response)
+        # if isDatabaseEnabled:
+        #     save_interaction(session_id, question, answer, response)
         return answer
     except Exception as e:
         print(f"Error on calling OpenAI API: {e}")

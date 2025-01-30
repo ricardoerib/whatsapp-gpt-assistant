@@ -1,6 +1,4 @@
 response_id,profiling_role,profiling_location,profiling_region,profiling_sector,survey_question_title,survey_question_type,option,suboption,answer
-7940940100,,,,,,,,,
-7940940101,,,,,,,,,
 7940940102,Investment Management,Singapore,Apac,Fund Manager (mutual funds),In which major markets are you processing corporate actions and proxy votes today?,table-radio,Valuations,,More automated
 7940940102,Investment Management,Singapore,Apac,Fund Manager (mutual funds),In which major markets are you processing corporate actions and proxy votes today?,table-radio,Foreign Exchange / FX,,More automated
 7940940102,Investment Management,Singapore,Apac,Fund Manager (mutual funds),How much did T+1 impact your levels of automation (straight through processing) in each of the following activities? Are you more or less automated than before T+1?,table-radio,Corporate Actions,,More automated
