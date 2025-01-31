@@ -1,17 +1,22 @@
 import sqlite3
 from datetime import datetime
 import uuid
+import logging
 
 class SQLiteDB:
     def __init__(self):
-        self.conn = sqlite3.connect("chatbot.db", check_same_thread=False)
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
+        self.conn = sqlite3.connect("./data/chatbot.db", check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
 
     def create_tables(self):
+        self.logger.info("Creating tables...")
         cursor = self.conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 profile_id TEXT PRIMARY KEY,
+                name TEXT,
                 phone_number TEXT UNIQUE,
                 email TEXT,
                 accepted_terms BOOLEAN DEFAULT FALSE,
@@ -30,15 +35,16 @@ class SQLiteDB:
             )
         ''')
         self.conn.commit()
+        self.logger.info("Tables created successfully")
 
     def generate_profile_id():
         return str(uuid.uuid4())
 
-    def get_or_create_user(self, phone_number):
+    def get_or_create_user(self, phone_number, name):
         user = self.get_user(phone_number=phone_number)
         if user is None:
             profile_id = str(uuid.uuid4())
-            self.register_user(profile_id=profile_id, phone_number=phone_number)
+            self.register_user(profile_id=profile_id, name=name, phone_number=phone_number)
             return self.get_user(profile_id=profile_id) 
         return user
 
@@ -55,17 +61,33 @@ class SQLiteDB:
         return dict(row) if row else None  
 
 
-    def register_user(self, profile_id, phone_number):
+    def register_user(self, profile_id, name, phone_number):
         cursor = self.conn.cursor()
-        cursor.execute("INSERT INTO users (profile_id, phone_number) VALUES (?, ?)", (profile_id, phone_number))
+        cursor.execute("INSERT INTO users (profile_id, name, phone_number) VALUES (?, ?, ?)", (profile_id, name, phone_number))
         self.conn.commit()
+        self.logger.info(f"User {name} created successfully")
 
     def accept_terms(self, profile_id):
         cursor = self.conn.cursor()
         cursor.execute("UPDATE users SET accepted_terms = TRUE WHERE profile_id = ?", (profile_id,))
         self.conn.commit()
+        self.logger.info(f"Terms accepted successfully")
 
     def update_email(self, profile_id, email):
         cursor = self.conn.cursor()
         cursor.execute("UPDATE users SET email = ? WHERE profile_id = ?", (email, profile_id))
         self.conn.commit()
+        self.logger.info(f"Email {email} updated successfully")
+
+    def get_user_history(self, profile_id):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM interactions WHERE profile_id = ?", (profile_id,))
+        rows = cursor.fetchall()
+        self.logger.info(f"User history retrieved successfully")
+        return [dict(row) for row in rows]
+    
+    def save_interaction(self, profile_id, question, response):
+        cursor = self.conn.cursor()
+        cursor.execute("INSERT INTO interactions (profile_id, question, response) VALUES (?, ?, ?)", (profile_id, question, response))
+        self.conn.commit()
+        self.logger.info("Interaction saved successfully")

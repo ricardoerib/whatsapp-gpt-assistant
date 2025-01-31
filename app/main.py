@@ -3,7 +3,8 @@ import logging
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
-import uvicorn
+
+from .utils import is_email_valid
 from .csv_processor import process_csv
 
 from .auth import decode_token, oauth2_scheme
@@ -53,32 +54,6 @@ async def ask_question(request: QuestionRequest, token: str = Depends(oauth2_sch
 
     return {"response": response}
 
-def get_phone_number_from_body(body):
-    entry = body.get("entry", [])
-    if entry:
-        changes = entry[0].get("changes", [])
-        if changes:
-            value = changes[0].get("value", {})
-            messages = value.get("messages", [])
-            
-            if messages:
-                message = messages[0]
-                return message["from"]
-    return None
-
-def get_message_from_body(body):
-    entry = body.get("entry", [])
-    if entry:
-        changes = entry[0].get("changes", [])
-        if changes:
-            value = changes[0].get("value", {})
-            messages = value.get("messages", [])
-            
-            if messages:
-                message = messages[0]
-                return message.get("text", {}).get("body", "") 
-    return None
-
 def extract_message(payload):
     return payload.get("entry", [{}])[0].get("changes", [{}])[0].get("value", {}).get("messages", [{}])[0].get("text", {}).get("body", "")
 
@@ -89,9 +64,35 @@ def extract_sender_name(payload):
     return payload.get("entry", [{}])[0].get("changes", [{}])[0].get("value", {}).get("contacts", [{}])[0].get("profile", {}).get("name", "")
 
 def extract_messages(payload):
-    """Extrai a lista de mensagens do payload e verifica se há pelo menos uma mensagem."""
     messages = payload.get("entry", [{}])[0].get("changes", [{}])[0].get("value", {}).get("messages", [])
     return messages if len(messages) > 0 else None
+
+async def handle_message(phone_number, name, message):
+    # User onboarding setup
+    user = user_profile.get_or_create_user(phone_number, name)
+    user = dict(user) if user else None 
+    profile_id = user.get("profile_id")
+    language = user.get("language", "en") if user else "en"
+
+    if not user.get("accepted_terms", False):
+        if message.lower() in ["1", "accept", "yes"]:
+            user_profile.accept_terms(profile_id)
+            await send_whatsapp_message(phone_number, get_translated_message("terms_accepted", language))
+        else:
+            await send_whatsapp_message(phone_number, get_translated_message("terms_required", language))
+        return
+    
+    if not user.get("email"):
+        if is_email_valid(message):
+            user_profile.update_email(profile_id, message)
+            await send_whatsapp_message(phone_number, get_translated_message("email_saved", language))
+        else:
+            await send_whatsapp_message(phone_number, get_translated_message("request_email", language))
+        return
+
+                
+    response = get_response_from_gpt(profile_id, phone_number, message)
+    await send_whatsapp_message(phone_number, response)
 
 @app.post("/webhook")
 async def whatsapp_webhook(request: Request):
@@ -99,41 +100,43 @@ async def whatsapp_webhook(request: Request):
         body = await request.json()
         messages = extract_messages(body)
         if messages:
-            print(f"body: {body}")
+            logger.info(f"body: {body}")
 
             name = extract_sender_name(body)
             phone_number = extract_phone_number(body)
             message = extract_message(body)
             
-            print(f"Nome: {name}, Telefone: {phone_number}, Mensagem: {message}")
+            logger.info(f"Message received from: {name}, Phone: {phone_number}\nMessage: {message}")
 
-            logger.info(f"Mensagem recebida de {phone_number}")
-
-            # user = user_profile.get_or_create_user(phone_number)
-
-            # user = dict(user) if user else None 
-            # language = user.get("language", "en") if user else "en"
-
-            # if not user.get("accepted_terms", False):
-            #     return {"message": get_translated_message("terms_required", language)}
-
-            # if not user.get("email"):
-            #     return {"message": get_translated_message("request_email", language)}
-
-            response = get_response_from_gpt(phone_number, message)
-            await send_whatsapp_message(phone_number, response)
+            await handle_message(phone_number, name, message)
 
         return {"status": "success"}
 
     except Exception as e:
-        logger.error(f"Erro ao processar webhook: {e}")
+        logger.error(f"Error processing webhook: {e}")
         raise HTTPException(status_code=500, detail="Erro ao processar webhook")
+    
 
-if __name__ == "__main__":
+@app.get("/webhook", response_class=PlainTextResponse)
+async def verify_webhook(request: Request):
+    mode = request.query_params.get("hub.mode")
+    token = request.query_params.get("hub.verify_token")
+    challenge = request.query_params.get("hub.challenge")
+    VERIFY_TOKEN = "teste"
+    if mode == "subscribe" and token == VERIFY_TOKEN:
+        return challenge
+    raise HTTPException(status_code=403, detail="Verification token invalid")
+
+def main():
     logger.info(f"Starting Application in {APP_ENVIRONMENT} mode")
     process_csv()
-    user_profile.initialize_database() 
+    user_profile.initialize_database()
+    
     import uvicorn
     logger.info("Starting Uvicorn server")
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, workers=2, log_level="warning")
+    logger.info("Uvicorn server started")
+
+if __name__ == "__main__":
+    main()
 

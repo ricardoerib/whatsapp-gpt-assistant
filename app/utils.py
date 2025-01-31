@@ -20,10 +20,12 @@ def generate_jwt(username: str, user_id: str) -> str:
         "sub": user_id, # User ID
         "name": username, # User Name
         "iat": int(time.time()), 
-        "exp": int(time.time()) + 3600 * 30 # 30 days
+        "exp": int(time.time()) + 3600 * 365 # 365 days
     }
 
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return token
 
+def is_email_valid(email: str) -> bool:
+    return "@" in email and "." in email
 
