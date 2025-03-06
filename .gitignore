@@ -172,3 +172,5 @@ cython_debug/
 chatbot.db
 
 .DS_Store
+
+.vscode/
