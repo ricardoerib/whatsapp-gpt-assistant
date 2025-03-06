@@ -55,7 +55,7 @@ class DynamoDBHandler:
             if profile_id:
                 response = self.table.get_item(Key={"profile_id": profile_id})
                 user = response.get("Item")
-                self.logger.info(f"[DynamoDB] User finded by profile_id: {user}")
+                self.logger.info(f"[DynamoDB] User finded by profile_id: {profile_id}")
                 return user if user else None
 
             elif phone_number:
@@ -65,7 +65,7 @@ class DynamoDBHandler:
                 )
                 items = response.get("Items", [])
                 user = items[0] if items else None
-                self.logger.info(f"[DynamoDB] User finded by phone_number: {user}")
+                self.logger.info(f"[DynamoDB] User finded by phone_number: {profile_id}")
                 return user
 
         except ClientError as e:
