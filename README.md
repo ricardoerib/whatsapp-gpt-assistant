@@ -1,153 +1,242 @@
-# Assistant Chatbot Project
+# WhatsApp GPT Assistant
 
-## Overview
+A powerful integration between WhatsApp Business API and OpenAI's GPT models, allowing businesses to provide intelligent automated responses to customer inquiries through WhatsApp.
 
-This project implements a Assistant chatbot using Python, FastAPI, and OpenAI's GPT-4. The chatbot processes user questions, analyzes a CSV file containing financial data, and provides personalized investment insights. It also integrates with Amazon DynamoDB to store user interactions, maintaining conversational context for each user session.
+![WhatsApp GPT Assistant](https://img.shields.io/badge/WhatsApp-GPT-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.103.1-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-API-412991?style=for-the-badge&logo=openai&logoColor=white)
 
----
+## 🌟 Features
 
-## Features
+- 💬 **WhatsApp Integration**: Seamless integration with WhatsApp Business API
+- 🤖 **GPT-Powered Responses**: Intelligent, contextual responses using OpenAI's latest models
+- 🔊 **Audio Processing**: Transcribe and respond to voice messages
+- 👤 **User Profiles**: Track user details and interaction history
+- 🌐 **Multi-language Support**: Framework for handling multiple languages
+- 💾 **Persistence**: Optional database integration for storing user profiles and interactions
+- 🔒 **User Consent Flow**: Built-in flow for terms acceptance and email collection
 
-1. **Virtual Assistant Functionality**
-   - Answers user questions with personalized insights based on the user's session context and a financial dataset.
+## 📋 Requirements
 
-2. **GPT-4 Integration**
-   - Leverages OpenAI's GPT-4 model to generate insightful and context-aware responses.
+- Python 3.11+
+- WhatsApp Business API access
+- OpenAI API key
+- Docker (optional, for containerized deployment)
 
-3. **Memory Support**
-   - Tracks user sessions using `sessionId` to maintain context across interactions.
+## 🚀 Quick Start
 
-4. **DynamoDB Integration**
-   - Stores questions, responses, and session history.
-   - Provides data retention policies to clean up data older than 12 months.
+### Using Docker
 
-5. **Filesystem Watcher**
-   - Monitors updates to the CSV file and reloads data dynamically.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/whatsapp-gpt-assistant.git
+   cd whatsapp-gpt-assistant
+   ```
 
-6. **Secure JWT Authentication**
-   - Ensures secure access to the API endpoints.
+2. Create a `.env` file with your configuration:
+   ```
+   OPENAI_API_KEY=your_openai_api_key
+   GPT_MODEL=gpt-4-turbo-preview
+   APP_ENVIRONMENT=DEV
+   WHATSAPP_VERIFY_TOKEN=your_verification_token
+   DATABASE_ENABLED=false
+   ```
 
-7. **AWS SES Notifications**
-   - Sends email notifications when the CSV is updated or duplicates are detected.
+3. Build and run the Docker container:
+   ```bash
+   docker-compose up -d
+   ```
 
-8. **Extensible Architecture**
-   - Modular codebase designed for scalability and maintainability.
+4. The API will be accessible at `http://localhost:8000`
 
----
+### Manual Installation
 
-## Requirements
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/whatsapp-gpt-assistant.git
+   cd whatsapp-gpt-assistant
+   ```
 
-- Python 3.9+
-- Node.js (for WhatsApp integration)
-- AWS Account (for DynamoDB and SES)
-- OpenAI API Key
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
----
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Installation
+4. Create a `.env` file with your configuration (see Docker section)
 
-### 1. Clone the Repository
+5. Run the application:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+## 🔌 WhatsApp Business API Setup
+
+1. Create a Meta developer account at [developers.facebook.com](https://developers.facebook.com/)
+2. Set up a WhatsApp Business account
+3. Configure a webhook with the following:
+   - URL: `https://your-domain.com/webhook`
+   - Verification Token: Same as your `WHATSAPP_VERIFY_TOKEN`
+   - Subscribe to `messages` events
+4. Test the connection by sending a message to your WhatsApp number
+
+## 🏗️ Architecture
+
+The application follows a modular architecture:
+
+```
+WhatsApp Cloud API → FastAPI Application → GPT Assistant Client → OpenAI API
+                      ↓                     ↓
+                      Webhook Processor  →  User Profile Manager
+```
+
+- **FastAPI Application**: Manages endpoints and async processes
+- **Webhook Processor**: Processes WhatsApp message payloads
+- **GPT Assistant Client**: Interfaces with OpenAI's API
+- **User Profile Manager**: Handles user data and conversation history
+
+## 📝 API Endpoints
+
+- `GET /webhook`: Handles WhatsApp webhook verification
+- `POST /webhook`: Processes incoming WhatsApp messages
+- `GET /healthcheck`: Health check endpoint for monitoring
+- `POST /ask`: Direct API endpoint for testing responses without WhatsApp
+
+## 🔧 Configuration
+
+Environment variables:
+
+| Variable | Description | Default Value |
+|----------|-------------|--------------|
+| OPENAI_API_KEY | OpenAI API key | - |
+| GPT_MODEL | GPT model to use | gpt-4-turbo-preview |
+| APP_ENVIRONMENT | Execution environment (LOCAL, DEV, PROD) | LOCAL |
+| WHATSAPP_VERIFY_TOKEN | WhatsApp webhook verification token | teste |
+| DATABASE_ENABLED | Enables data persistence | false |
+
+## 🧪 Testing
+
+The project includes comprehensive tests for all components:
+
 ```bash
-git clone https://github.com/ricardoerib/bot-assistant-open-api.git
-cd bot-assistant-open-api
+# Run all tests
+make test
+
+# Run with coverage report
+make test-cov
+
+# Run specific test file
+pytest tests/test_messages.py
 ```
 
-### 2. Create a Virtual Environment
+## 🛠️ Development
+
+Useful commands:
+
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Format code
+make format
+
+# Lint code
+make lint
+
+# Clean temporary files
+make clean
+
+# Build Docker image
+make docker-build
+
+# Run Docker container
+make docker-run
 ```
 
-### 3. Install Dependencies
+## 💡 Supported Message Types
+
+| Type | Support Level | Description |
+|------|---------------|-------------|
+| Text | ✅ Full | Process and respond to text messages |
+| Audio | ✅ Full | Transcribe voice messages and respond |
+| Image | ⚠️ Partial | Detect but cannot process content |
+| Document | ⚠️ Partial | Detect but cannot process content |
+| Video | ⚠️ Partial | Detect but cannot process content |
+| Location | ❌ None | Not supported yet |
+| Contacts | ❌ None | Not supported yet |
+| Interactive | ❌ None | Not supported yet |
+
+## 🔍 Debugging
+
+### Local Testing with curl
+
 ```bash
-pip install -r requirements.txt
+curl -X POST http://localhost:8000/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"object":"whatsapp_business_account","entry":[{"id":"123456789","changes":[{"value":{"messaging_product":"whatsapp","metadata":{"display_phone_number":"5551234567","phone_number_id":"1234567890"},"contacts":[{"profile":{"name":"Test User"},"wa_id":"5551234567"}],"messages":[{"from":"5551234567","id":"wamid.abcdefghijklmnopqrstuvwxyz","timestamp":"1234567890","text":{"body":"Hello!"},"type":"text"}]},"field":"messages"}]}]}'
 ```
 
-### 4. Configure Environment Variables
-Create a `.env` file in the root directory:
+### Logs
+
+The application uses Python's logging module. To increase log verbosity, modify the log level in `app/main.py`:
+
+```python
+logging.basicConfig(
+    level=logging.DEBUG,  # Change to DEBUG for more details
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 ```
-OPENAI_API_KEY=<your_openai_api_key>
-AWS_ACCESS_KEY_ID=<your_aws_access_key>
-AWS_SECRET_ACCESS_KEY=<your_aws_secret_key>
-AWS_REGION=<your_aws_region>
-JWT_SECRET_KEY=<your_jwt_secret_key>
-GPT_MODEL="gpt-4o-mini"
-AWS_REGION=us-east-1
-DATABASE_ENABLED=false
+
+## 📊 Project Structure
+
 ```
+whatsapp-gpt-assistant/
+├── app/                       # Application code
+│   ├── main.py                # FastAPI application entry point
+│   ├── messages.py            # WhatsApp message processor
+│   ├── llm_assistant.py       # GPT client implementation
+│   ├── user_profile.py        # User profile management
+│   └── ...                    # Other modules
+├── tests/                     # Test suite
+│   ├── conftest.py            # Shared test fixtures
+│   ├── test_main.py           # Tests for FastAPI endpoints
+│   └── ...                    # Other test modules
+├── docker-compose.yml         # Docker Compose configuration
+├── Dockerfile                 # Docker configuration
+├── Makefile                   # Development commands
+└── ...                        # Other project files
+```
+
+## 🚧 Future Improvements
+
+- Image processing with Vision API
+- Support for interactive buttons and menus
+- Local audio file processing
+- Enhanced multi-language support
+- Response caching for performance
+- Integration with analytics platforms
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 👥 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📬 Contact
+
+If you have any questions, please reach out to [ricardo@ribeiro.solutions](mailto:ricardo@ribeiro.solutions)
 
 ---
 
-## Usage
-
-### 1. Start the FastAPI Server
-```bash
-uvicorn app.main:app --reload
-```
-
-### 2. Test API Endpoints
-Use Postman or a similar tool to send requests:
-
-**Endpoint:** `/ask`
-- **Method:** `POST`
-- **Headers:**
-  - `Authorization: Bearer <JWT_TOKEN>`
-- **Body:**
-```json
-{
-  "question": "What are the investment trends for 2025?",
-  "overrideConfig": {
-    "sessionId": "1234567890"
-  }
-}
-```
-
-### 3. Example Response
-```json
-{
-  "response": "Based on current trends, sectors like renewable energy, AI, and healthcare show great potential for 2025."
-}
-```
-
----
-
-## Architecture
-
-### Key Components
-1. **FastAPI:** Provides API endpoints for user interactions.
-2. **GPT-4 Integration:** Processes questions and generates responses.
-3. **DynamoDB:** Stores user interactions with `sessionId` as the primary key.
-4. **CSV Processor:** Loads and monitors financial data for insights.
-5. **JWT Authentication:** Secures API access.
-
-### Directory Structure
-```
-bot-assistant-open-api/
-├── app/
-│   ├── main.py               # FastAPI application entry point
-│   ├── csv_processor.py      # Processes CSV data and monitors updates
-│   ├── gpt_client.py         # Handles GPT-4 API requests
-│   ├── auth.py               # JWT authentication
-│   ├── dynamodb_client.py    # DynamoDB interactions
-│   ├── email_notifier.py     # Sends notifications via AWS SES
-│   ├── scheduler.py          # Cron jobs for data cleanup
-│   └── utils.py              # Helper functions
-├── data/
-│   └── data.csv              # Financial data file
-├── tests/
-│   └── test_main.py          # Unit tests
-├── .env                      # Environment variables
-├── requirements.txt          # Python dependencies
-├── README.md                 # Project documentation
-```
-
----
-
-## Future Enhancements
-
-- Add support for multi-language responses.
-- Integrate with additional data sources (e.g., APIs for live market data).
-- Expand analytics with visual dashboards.
-- Introduce advanced error monitoring and observability tools.
-- Implement a CI/CD pipeline for automated testing and deployment.
-- Enhance security with rate limiting and input validation.
+Made with ❤️ by Ricardo Ribeiro
