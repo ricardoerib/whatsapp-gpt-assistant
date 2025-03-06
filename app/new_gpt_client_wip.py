@@ -31,6 +31,17 @@ functions = [
         }
     },
     {
+        "name": "get_user_history",
+        "description": "Recupera o perfil do usuário",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "profile_id": {"type": "string", "description": "ID do perfil do usuário"}
+            },
+            "required": ["profile_id"]
+        }
+    },
+    {
         "name": "query_csv_data",
         "description": "Consulta insights da pesquisa VX",
         "parameters": {
@@ -50,19 +61,6 @@ functions = [
                 "metric": {"type": "string", "description": "Métrica a ser analisada nos dados da pesquisa"}
             },
             "required": ["metric"]
-        }
-    },
-    {
-        "name": "save_interaction",
-        "description": "Salva uma interação do usuário com o chatbot",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "profile_id": {"type": "string", "description": "ID do perfil do usuário"},
-                "question": {"type": "string", "description": "Pergunta do usuário"},
-                "response": {"type": "string", "description": "Resposta do chatbot"}
-            },
-            "required": ["profile_id", "question", "response"]
         }
     }
 ]
@@ -90,9 +88,9 @@ def generate_csv_insights(metric):
 
 function_map = {
     "get_user_history": user_profile.get_user_history,
+    "get_user_profile": user_profile.get_user,
     "query_csv_data": query_csv_data,
     "generate_csv_insights": generate_csv_insights,
-    "save_interaction": user_profile.save_interaction
 }
 
 def get_response_from_gpt(session_id, question):

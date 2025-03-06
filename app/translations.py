@@ -6,7 +6,6 @@ default_messages = {
     "terms_accepted": "Thank you for accepting the terms.",
     "request_email": "Please provide your email to complete your registration.",
     "email_saved": "Your email has been saved successfully. How can I assist you today?",
-    "welcome_back": "Welcome back, user {phone}! How can I assist you today?"
 }
 
 def get_translated_message(message_key, language):

@@ -80,10 +80,10 @@ class SQLiteDB:
         self.logger.info(f"Email {email} updated successfully")
 
     def get_user_history(self, profile_id):
+        #limit to last 10 interactions
         cursor = self.conn.cursor()
-        cursor.execute("SELECT * FROM interactions WHERE profile_id = ?", (profile_id,))
+        cursor.execute("SELECT * FROM interactions WHERE profile_id = ? ORDER BY created_at DESC LIMIT 10", (profile_id,))
         rows = cursor.fetchall()
-        self.logger.info(f"User history retrieved successfully")
         return [dict(row) for row in rows]
     
     def save_interaction(self, profile_id, question, response):

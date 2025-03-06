@@ -5,6 +5,8 @@ from datetime import datetime
 from botocore.exceptions import ClientError
 import uuid
 import logging
+from dotenv import load_dotenv
+load_dotenv()
 
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 DYNAMODB_TABLE = os.getenv("DYNAMODB_TABLE", "chatbot_users")
@@ -21,31 +23,24 @@ class DynamoDBHandler:
         existing_tables = list(dynamodb.meta.client.list_tables()["TableNames"])
 
         if DYNAMODB_TABLE in existing_tables:
-            self.logger.info(f"[DynamoDB] A tabela '{DYNAMODB_TABLE}' já existe.")
+            self.logger.info(f"[DynamoDB] Table '{DYNAMODB_TABLE}' already exists.")
             return
         
-        self.logger.info(f"[DynamoDB] Criando a tabela '{DYNAMODB_TABLE}'...")
+        self.logger.info(f"[DynamoDB] Creating the table '{DYNAMODB_TABLE}'...")
         
         try:
             table = dynamodb.create_table(
                 TableName=DYNAMODB_TABLE,
-                KeySchema=[
-                    {"AttributeName": "profile_id", "KeyType": "HASH"}  # Chave primária
-                ],
-                AttributeDefinitions=[
-                    {"AttributeName": "profile_id", "AttributeType": "S"}
-                ],
-                ProvisionedThroughput={
-                    "ReadCapacityUnits": 5,
-                    "WriteCapacityUnits": 5
-                }
+                KeySchema=[{"AttributeName": "profile_id", "KeyType": "HASH"}],
+                AttributeDefinitions=[{"AttributeName": "profile_id", "AttributeType": "S"}],
+                ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5}
             )
 
             table.wait_until_exists()
-            self.logger.info(f"[DynamoDB] Tabela '{DYNAMODB_TABLE}' criada com sucesso!")
+            self.logger.info(f"[DynamoDB] Table '{DYNAMODB_TABLE}' created successfully!")
 
         except ClientError as e:
-            self.logger.error(f"[DynamoDB] Erro ao criar a tabela: {e}")
+            self.logger.error(f"[DynamoDB] Error creating table: {e}")
 
     def get_or_create_user(self, phone_number, name):
         user = self.get_user(phone_number=phone_number)
@@ -53,37 +48,46 @@ class DynamoDBHandler:
             profile_id = str(uuid.uuid4())
             self.register_user(profile_id=profile_id, name=name, phone_number=phone_number)
             return self.get_user(profile_id=profile_id)
+        return user
 
     def get_user(self, profile_id=None, phone_number=None):
         try:
             if profile_id:
                 response = self.table.get_item(Key={"profile_id": profile_id})
-                self.logger.info(f"[DynamoDB] Usuário encontrado: {response.get('Item')}")
-                return response.get("Item")
+                user = response.get("Item")
+                self.logger.info(f"[DynamoDB] User finded by profile_id: {user}")
+                return user if user else None
+
             elif phone_number:
                 response = self.table.scan(
                     FilterExpression="phone_number = :phone",
                     ExpressionAttributeValues={":phone": phone_number}
                 )
-                self.logger.info(f"[DynamoDB] Usuário encontrado: {response['Items'][0] if response['Items'] else None}")
-                return response["Items"][0] if response["Items"] else None
+                items = response.get("Items", [])
+                user = items[0] if items else None
+                self.logger.info(f"[DynamoDB] User finded by phone_number: {user}")
+                return user
+
         except ClientError as e:
-            self.logger.error(f"[DynamoDB] Erro ao buscar usuário: {e}")
-            return None
+            self.logger.error(f"[DynamoDB] Error on get user: {e}")
+
+        return None
 
     def register_user(self, profile_id, name, phone_number):
         try:
-            self.table.put_item(Item={
+            user_data = {
                 "profile_id": profile_id,
                 "phone_number": phone_number,
                 "name": name,
                 "accepted_terms": False,
                 "language": "en",
                 "created_at": str(datetime.utcnow())
-            })
-            self.logger.info(f"[DynamoDB] Usuário {name} criado com sucesso!")
+            }
+            self.table.put_item(Item=user_data)
+            self.logger.info(f"[DynamoDB] User {name} created successfully! profile_id: {profile_id}")
+
         except ClientError as e:
-            self.logger.error(f"[DynamoDB] Erro ao registrar usuário: {e}")
+            self.logger.error(f"[DynamoDB] Erro creating user: {e}")
 
     def accept_terms(self, profile_id):
         try:
@@ -92,9 +96,10 @@ class DynamoDBHandler:
                 UpdateExpression="SET accepted_terms = :val",
                 ExpressionAttributeValues={":val": True}
             )
-            self.logger.info(f"[DynamoDB] Termos aceitos com sucesso!")
+            self.logger.info(f"[DynamoDB] Terms accepted profile_id {profile_id}!")
+
         except ClientError as e:
-            self.logger.error(f"[DynamoDB] Erro ao atualizar termos: {e}")
+            self.logger.error(f"[DynamoDB] Error updating terms: {e}")
 
     def update_email(self, profile_id, email):
         try:
@@ -103,9 +108,10 @@ class DynamoDBHandler:
                 UpdateExpression="SET email = :email",
                 ExpressionAttributeValues={":email": email}
             )
-            self.logger.info(f"[DynamoDB] E-mail atualizado com sucesso!")
+            self.logger.info(f"[DynamoDB] E-mail updated by profile_id {profile_id}!")
+
         except ClientError as e:
-            self.logger.error(f"[DynamoDB] Erro ao atualizar e-mail: {e}")
+            self.logger.error(f"[DynamoDB] Error updating e-mail: {e}")
 
     def save_interaction(self, profile_id, question, response):
         try:
@@ -117,16 +123,19 @@ class DynamoDBHandler:
                     ":empty_list": []
                 }
             )
-            self.logger.info(f"[DynamoDB] Interação salva com sucesso!")
+            self.logger.info(f"[DynamoDB] Interaction saved for profile_id {profile_id}!")
+
         except ClientError as e:
-            self.logger.error(f"[DynamoDB] Erro ao salvar interação: {e}")
+            self.logger.error(f"[DynamoDB] Error saving interaction: {e}")
 
     def get_user_history(self, profile_id):
         try:
+            #limit to last 10 interactions
             response = self.table.get_item(Key={"profile_id": profile_id})
-            user = response.get("Item", {})
-            self.logger.info(f"[DynamoDB] Histórico do usuário: {user.get('interactions', [])}")
-            return user.get("interactions", []) if user else []
+            interactions = response.get("Item", {}).get("interactions", [])
+            self.logger.info(f"[DynamoDB] History recovered for profile_id {profile_id}!")
+            return interactions[-10:]  # Return the last 10 interactions
+
         except ClientError as e:
-            self.logger.error(f"[DynamoDB] Erro ao buscar histórico: {e}")
+            self.logger.error(f"[DynamoDB] Error recovering history: {e}")
             return []
